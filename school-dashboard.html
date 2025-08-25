@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Dashboard</title>
+  <style>
+  :root{
+    --fuchsia: rgb(138,1,92);
+    --sea: rgb(5,122,56);
+    --muted:#f5f5f5;
+  }
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;background:var(--muted);color:#222}
+  header{background: linear-gradient(to right, #112719, #3a7a5a);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0}
+  header .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button.primary{background:var(--sea);color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+  button.primary:hover{background:var(--fuchsia);color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+  button.secondary{background:var(--fuchsia);color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+  button:hover{background:var(--fuchsia);color:#fff;border:0;padding:8px 10px;border-radius:6px;cursor:pointer}
+  button.warn{background:#d32f2f;color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+  
+  /* MAIN LAYOUT */
+  main{
+    padding:18px;
+    max-width:1000px;
+    margin:18px auto;
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:18px;
+  }
+  .card{
+    background:#fff;
+    padding:16px;
+    border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    width:100%;
+    box-sizing:border-box;
+  }
+  .card h2{margin:0 0 12px;font-size:18px;color:var(--fuchsia)}
+  .card p{margin:0 0 12px;font-size:14px;color:#222}
+  label{display:block;margin:8px 0 4px;font-size:13px}
+  input{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+  select{width:30%;padding:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+  
+  /* TABLE */
+  .students-table{width:100%;border-collapse:collapse;margin-top:10px;}
+  .students-table th{background:var(--fuchsia);color:#fff;padding:8px;text-align:left}
+  .students-table td{padding:8px;border-bottom:1.5px solid #b4b2b2}
+  .table-wrap{width:100%;overflow-x:auto} 
+  
+  .muted{color:#292c1c;font-size:13px}
+  .small{font-size:13px}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .danger{background:#ff6b6b;color:#fff;border:0;padding:6px 8px;border-radius:6px;cursor:pointer}
+  .ok{background:var(--sea);color:#fff;border:0;padding:6px 8px;border-radius:6px;cursor:pointer}
+  .topline{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+  .actions button{
+  padding:6px 12px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  font-size:14px;
+  color:#fff;
+  margin-right:6px;
+  transition:background .15s ease, transform .05s ease;
+}
+.actions button:first-child{ background:#06c26a; }      /* Edit */
+.actions button:first-child:hover{ background:#029b5b; }
+
+.actions button:last-child{ background:#dc3545; }       /* Delete */
+.actions button:last-child:hover{ background:#a71d2a; }
+
+.actions button:active{ transform: translateY(1px); }
+
+
+  footer {
+      background-color:#5a5759; 
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+  
+  /* MOBILE RESPONSIVE */
+  @media(max-width:650px){
+    main{grid-template-columns:1fr}
+    header{flex-direction:column;align-items:flex-start}
+    header .controls{width:80%;justify-content:flex-start;gap:4px;flex-wrap:wrap}
+    .card{padding:8px; min-width:265px x 650px}
+    .students-table{font-size:13px}
+    .students-table th,.students-table td{padding:6px}
+  }
+</style>
+
+</head>
+<body>
+<header>
+  <h1 id="schoolTitle">School Dashboard</h1>
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search students..." style="padding:5px;width:200px;">
+    <button onclick="exportTableToCSV('students.csv')">Export CSV</button>
+    <select id="classFilter"><option value="">All classes</option></select>
+    <div class="muted" id="schoolInfo"></div>
+    
+  </div>
+</header>
+
+<main>
+  <!-- Left column -->
+  <section class="card">
+    <div class="topline">
+      <h2>Add Student</h2>
+      <span class="muted small" id="studentCount"></span>
+    </div>
+    <form id="addStudentForm">
+      <label for="s_name">Full name</label>
+      <input id="s_name" name="name" required placeholder="e.g. Ada Jimoh">
+      <label for="s_gender">Gender</label>
+      <select id="s_gender" name="gender">
+        <option value="M">M</option>
+        <option value="F">F</option>
+        <option value="Other">Other</option>
+      </select>
+      <label for="s_class">Class</label>
+      <input id="s_class" name="class" placeholder="e.g. JSS1">
+      <label for="s_dob">Date of birth</label>
+      <input id="s_dob" name="dob" type="date">
+      <label for="s_guardian">Parent / Guardian</label>
+      <input id="s_guardian" name="guardian_contact" placeholder="Name & contact">
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button type="submit" class="ok">Add Student</button>
+        <button type="button" id="refreshBtn" class="small" style="background:#eee;border-radius:6px;padding:8px;border:1px solid #ddd;cursor:pointer">Refresh</button>
+      </div>
+    </form>
+    <hr style="margin:12px 0">
+    <h2 class="small">School Actions</h2>
+
+    <div class="controls">
+    <!-- Subscription info -->
+    <span id="subscriptionInfo" class="muted small"></span>
+   
+  <br><br>
+    <p class="muted small">Cick the pay now button to top up your subscription</p>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      
+      <button class="primary" id="subscribeBtn" onclick="window.location.href='payment.html'" >Pay Now</button>
+    </div>
+  <br>
+
+  <div class="upload-section">
+  <h3>Upload Students</h3>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="studentFile" name="studentFile" accept=".csv,.xlsx" required>
+    <button type="submit">Upload</button>
+  </form>
+  <div id="uploadStatus"></div>
+</div>
+  
+<br><br>
+    <p class="muted small">Click the logout button to sign out.</p>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" id="logoutBtn">Logout</button>
+    </div>
+  </section>
+
+
+  <!-- Right column -->
+  <section class="card">
+    <h2>Students</h2>
+    <div class="table-wrap">
+      <table id="studentsTable" aria-live="polite" class="students-table">
+        <thead>
+          <tr>
+            <th>S/N</th>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Class</th>
+            <th>DOB</th>
+            <th>Guardian</th>
+            <th class="small">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTbody">
+          <tr><td colspan="7" class="muted">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+<footer>
+    &copy; 2025 Clairdot. All rights reserved.</a>
+  </footer>
+
+</main>
+<script>
+const API_BASE = 'http://localhost:5500';
+const schoolId = localStorage.getItem('schoolId');
+const schoolName = localStorage.getItem('schoolName') || '';
+const titleEl = document.getElementById('schoolTitle');
+const infoEl = document.getElementById('schoolInfo');
+
+
+if (!schoolId) {
+  alert('No school logged in. Please login first.');
+  window.location.href = '/school-login.html';
+} else {
+  titleEl.textContent = `${schoolName} Dashboard`;
+  infoEl.textContent = `ID: ${schoolId}`;
+}
+
+const addForm = document.getElementById('addStudentForm');
+const studentsTbody = document.getElementById('studentsTbody');
+const studentCount = document.getElementById('studentCount');
+const logoutBtn = document.getElementById('logoutBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const classFilter = document.getElementById('classFilter');
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadClasses(){
+  try {
+    const res = await fetch(`${API_BASE}/classes?schoolId=${schoolId}`);
+    const classes = await res.json();
+    classFilter.innerHTML = '<option value="">All classes</option>';
+    classes.forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value=c; opt.textContent=c;
+      classFilter.appendChild(opt);
+    });
+  } catch(err){ console.error("Error loading classes:",err); }
+}
+
+async function loadStudents(className=''){
+  studentsTbody.innerHTML = '<tr><td colspan="7" class="muted">Loading...</td></tr>';
+  try {
+    let url = `${API_BASE}/students?schoolId=${encodeURIComponent(schoolId)}`;
+    if(className) url+=`&class=${encodeURIComponent(className)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('Failed fetch');
+    const students = await res.json();
+    if(!Array.isArray(students)||students.length===0){
+      studentsTbody.innerHTML='<tr><td colspan="7" class="muted">No students found</td></tr>';
+      studentCount.textContent='0 students';
+      return;
+    }
+    studentCount.textContent=`${students.length} students`;
+    studentsTbody.innerHTML='';
+    students.forEach((s,idx)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${idx+1}</td>
+        <td>${escapeHtml(s.name)}</td>
+        <td>${escapeHtml(s.gender||'')}</td>
+        <td>${escapeHtml(s.class||'')}</td>
+        <td>${s.dob?new Date(s.dob).toLocaleDateString():''}</td>
+        <td>${escapeHtml(s.guardian_contact||'')}</td>
+        <td class="actions">
+          <button onclick="window.location.href='student-profile.html?id=${s.id}'">Edit</button>
+          <button onclick="deleteStudent(${s.id})">Delete</button>
+        </td>`;
+      studentsTbody.appendChild(tr);
+    });
+  } catch(err){
+    console.error(err);
+    studentsTbody.innerHTML='<tr><td colspan="7" class="muted">Error loading students</td></tr>';
+  }
+}
+
+addForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={ school_id:parseInt(schoolId,10),
+    name:document.getElementById('s_name').value.trim(),
+    gender:document.getElementById('s_gender').value,
+    class:document.getElementById('s_class').value.trim(),
+    dob:document.getElementById('s_dob').value||null,
+    guardian_contact:document.getElementById('s_guardian').value.trim()||null
+  };
+  if(!body.name){alert('Name required');return;}
+  try{
+    const res=await fetch(`${API_BASE}/students`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok) throw new Error('Add failed');
+    alert('Student added');
+    addForm.reset();
+    loadStudents(classFilter.value);
+    loadClasses();
+  }catch(err){console.error(err);alert('Failed to add student');}
+});
+
+async function deleteStudent(id){
+  if(!confirm('Delete this student?')) return;
+  try{
+    const res=await fetch(`${API_BASE}/students/${id}`,{method:'DELETE'});
+    if(!res.ok) throw new Error('Delete failed');
+    alert('Deleted');
+    loadStudents(classFilter.value);
+    loadClasses();
+  }catch(err){console.error(err);alert('Failed delete');}
+}
+window.deleteStudent=deleteStudent;
+
+classFilter.addEventListener('change',()=>loadStudents(classFilter.value));
+
+document.getElementById('searchInput').addEventListener('keyup',function(){
+  const search=this.value.toLowerCase();
+  document.querySelectorAll('#studentsTbody tr').forEach(row=>{
+    row.style.display=row.innerText.toLowerCase().includes(search)?'':'none';
+  });
+});
+
+function exportTableToCSV(filename){
+  const rows=document.querySelectorAll("#studentsTable tr");
+  let csv=[];
+  rows.forEach(r=>{
+    const cols=r.querySelectorAll("td,th");
+    let rowData=[];
+    cols.forEach(c=>rowData.push('"'+c.innerText.replace(/"/g,'""')+'"'));
+    csv.push(rowData.join(","));
+  });
+  const blob=new Blob([csv.join("\n")],{type:"text/csv"});
+  const link=document.createElement("a");
+  link.download=filename;
+  link.href=URL.createObjectURL(blob);
+  link.click();
+}
+
+function daysLeft(endDateStr) {
+  if (!endDateStr) return null;
+  const today = new Date();
+  const end = new Date(endDateStr);
+  return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+}
+
+async function loadSubscription() {
+  try {
+    const res = await fetch(`${API_BASE}/schools/${schoolId}/subscription`);
+    if (!res.ok) throw new Error('Failed to fetch subscription');
+    const sub = await res.json();
+
+    const subInfo = document.getElementById('subscriptionInfo');
+
+    if (!sub || !sub.subscription_end) {
+      subInfo.textContent = "No active subscription";
+      return;
+    }
+
+    const left = daysLeft(sub.subscription_end);
+    if (left >= 0) {
+      subInfo.textContent = `Subscription active — ${left} day${left===1?'':'s'} left (ends ${new Date(sub.subscription_end).toLocaleDateString()})`;
+    } else {
+      subInfo.textContent = `Subscription expired on ${new Date(sub.subscription_end).toLocaleDateString()}`;
+    }
+  } catch (err) {
+    console.error("Subscription fetch error:", err);
+    document.getElementById('subscriptionInfo').textContent = "Error loading subscription info";
+  }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fileInput = document.getElementById('studentFile');
+  if (!fileInput.files.length) {
+    alert("Please select a file first!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('studentFile', fileInput.files[0]);
+  formData.append('schoolId', schoolId);
+
+  try {
+    const res = await fetch(`${API_BASE}/students/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('uploadStatus').textContent = "Upload successful!";
+      alert(`${data.inserted} students added successfully`);
+      location.reload(); // refresh dashboard table
+    } else {
+      throw new Error(data.message || "Upload failed");
+    }
+  } catch (err) {
+    document.getElementById('uploadStatus').textContent = "Error uploading file";
+    console.error("Upload error:", err);
+  }
+});
+
+
+logoutBtn.addEventListener('click',()=>{
+  localStorage.removeItem('schoolId');
+  localStorage.removeItem('schoolName');
+  window.location.href='/school-login.html';
+});
+
+refreshBtn.addEventListener('click',()=>loadStudents(classFilter.value));
+
+loadClasses();
+loadStudents();
+loadSubscription();
+
+</script>
+</body>
+</html>

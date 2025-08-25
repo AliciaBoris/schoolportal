@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pay Subscription</title>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 60px; }
+    button { background: rgb(5,122,56); color: #fff; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    button:hover { background: rgb(4,100,45); }
+  </style>
+</head>
+<body>
+  <h2>Complete Your Subscription</h2>
+  <p>Please make payment to continue using your school dashboard.</p>
+  <button id="payBtn">Pay ₦5000</button>
+
+  <script>
+    const API_BASE = "http://localhost:5500";
+    const schoolId = localStorage.getItem('schoolId');
+    const schoolName = localStorage.getItem('schoolName');
+    const schoolEmail = localStorage.getItem('schoolEmail');
+
+    document.getElementById('payBtn').addEventListener('click', () => {
+      let handler = PaystackPop.setup({
+        key: 'pk_test_xxxxxxxxxxxxxxxxxxxxxxxx', // 🔑 replace with your Paystack Public Key
+        email: schoolEmail || "default@email.com",
+        amount: 5000 * 100, // 5000 NGN
+        currency: "NGN",
+        ref: 'SCH-' + Math.floor((Math.random() * 1000000000) + 1),
+        callback: function(response) {
+          console.log("Payment success:", response);
+
+          // Activate subscription
+          fetch(`${API_BASE}/admin/schools/${schoolId}/activate`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-secret': 'supersecretadmin'
+            },
+            body: JSON.stringify({ days: 30 })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              alert('Payment successful. Subscription activated!');
+              localStorage.setItem('schoolId', schoolId);
+              localStorage.setItem('schoolName', schoolName);
+              window.location.href = 'school-dashboard.html';
+            } else {
+              alert('Payment went through, but subscription update failed.');
+            }
+          })
+          .catch(err => {
+            console.error("Error activating subscription:", err);
+            alert('Server error. Please contact admin.');
+          });
+        },
+        onClose: function() {
+          alert('Payment window closed without completing payment.');
+        }
+      });
+      handler.openIframe();
+    });
+  </script>
+</body>
+</html>

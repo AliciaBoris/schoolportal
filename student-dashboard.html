@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Dashboard</title>
+<style>
+  :root{
+    --fuchsia: rgb(138,1,92);
+    --sea: rgb(5,122,56);
+    --muted: #f5f5f5;
+    --card-bg: #fff;
+  }
+  body { font-family: Arial, Helvetica, sans-serif; margin:0; background:var(--muted); color:#222; }
+  header { background: var(--sea); color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; }
+  header .controls { display:flex; gap:8px; align-items:center; }
+  .container { max-width:1100px; margin:18px auto; padding:16px; background:var(--card-bg); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+  .top { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+  .profile { flex: 0 0 240px; }
+  .profile .card { padding:12px; text-align:center; }
+  .profile img { width:140px; height:140px; object-fit:cover; border-radius:50%; border:2px solid #ddd; background:#fff; display:block; margin:0 auto 8px; }
+  .summary { flex:1; min-width:260px; }
+  .field { margin:8px 0; }
+  .field label { display:block; font-weight:700; color:#444; margin-bottom:4px; }
+  .field .value { color:#333; font-size:15px; }
+  .muted { color:#585757; font-size:13px; }
+  .grid { display:grid; color:#252525; grid-template-columns: 1fr 300px; gap:16px; margin-top:10px; align-items:start; }
+  .card { background:#ffffff; padding:12px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+  .reports-list a { display:block; padding:8px 6px; border-bottom:1px solid #f0f0f0; color:#0b4; text-decoration:none; }
+  .reports-list a:last-child { border-bottom:0; }
+  textarea { width:100%; min-height:90px; padding:8px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; }
+  button { display:inline-block; padding:10px 12px; border:0; border-radius:8px; cursor:pointer; font-weight:700; }
+  .btn-logout { background:#eee; color:#333; }
+  .btn-edit { background:var(--fuchsia); color:#fff; }
+  .btn-primary { background:var(--sea); color:#fff; }
+  .calendar { margin-top:10px; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-cell { min-height:70px; background:#fff; border-radius:6px; padding:6px; box-shadow:0 1px 3px rgba(0,0,0,0.03); position:relative; font-size:13px; }
+  .cal-cell .day { position:absolute; top:6px; right:8px; font-weight:600; color:#494949; font-size:12px; }
+  .event-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--fuchsia); margin-right:6px; vertical-align:middle; }
+  .events-list { margin-top:8px; font-size:13px; color:#333; }
+  .events-list .evt { padding:6px 8px; border-radius:6px; background:#f7f7f7; margin-bottom:6px; }
+  @media(max-width:980px){
+    .grid { grid-template-columns:1fr; }
+    .profile { flex:1 1 100%; }
+    .top { flex-direction:column; align-items:center; }
+    header { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Student Dashboard</h1>
+  <div class="controls">
+    <div id="smallInfo" class="muted" style="min-width:160px;text-align:right;"></div>
+    <button id="logoutBtn" class="btn-logout">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="top">
+    <div class="profile card profile">
+      <img id="studentPassport" src="" alt="Passport Photo">
+      <div style="margin-top:8px">
+        <div class="field"><label style="font-weight:600">Name</label><div id="studentName" class="value">—</div></div>
+        <div class="field"><label style="font-weight:600">Student No.</label><div id="studentNumber" class="value">—</div></div>
+        <div style="margin-top:8px">
+          <button id="editBtn" class="btn-edit">✎ Edit Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary card">
+      <div class="field"><label>Class</label><div id="studentClass" class="value">—</div></div>
+      <div class="field"><label>Gender</label><div id="studentGender" class="value">—</div></div>
+      <div class="field"><label>Date of Birth</label><div id="studentDob" class="value">—</div></div>
+      <div class="field"><label>Guardian</label><div id="studentGuardian" class="value">—</div></div>
+      <div class="field"><label>Parent's Phone</label><div id="studentPhone" class="value">—</div></div>
+      <div class="field"><label>Email</label><div id="studentEmail" class="value">—</div></div>
+      <div class="field"><label>Address</label><div id="studentAddress" class="value">—</div></div>
+      <div class="field"><label>Subjects</label><div id="studentSubjects" class="value">—</div></div>
+      <div class="field"><label>Fee Status</label><div id="studentFeeStatus" class="value">—</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Left: reports + notes -->
+    <div class="card">
+      <h3 style="margin:0 0 10px;color:var(--fuchsia)">Quick downloads</h3>
+      <div id="reportsArea" class="reports-list muted">Loading reports…</div>
+
+      <hr style="margin:12px 0" />
+
+      <h3 style="margin:0 0 6px;color:var(--fuchsia)">Send a note to admin</h3>
+      <p class="muted" style="margin:6px 0 10px">Type a short message and click Send — the school will receive it.</p>
+      <textarea id="noteText" placeholder="Message to school (e.g., My name is not correctly spelled. The correct spelling is)..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="sendNoteBtn" class="btn-primary">Send</button>
+        <div id="noteStatus" class="muted" style="align-self:center"></div>
+      </div>
+    </div>
+
+    <!-- Right: calendar -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;color:var(--fuchsia)">Calendar</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="prevMonth" class="btn-logout">‹</button>
+          <div id="calMonth" class="muted"></div>
+          <button id="nextMonth" class="btn-logout">›</button>
+        </div>
+      </div>
+
+      <div class="calendar">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px;">
+          <div class="muted" style="text-align:center;font-weight:700">Sun</div>
+          <div class="muted" style="text-align:center;font-weight:700">Mon</div>
+          <div class="muted" style="text-align:center;font-weight:700">Tue</div>
+          <div class="muted" style="text-align:center;font-weight:700">Wed</div>
+          <div class="muted" style="text-align:center;font-weight:700">Thu</div>
+          <div class="muted" style="text-align:center;font-weight:700">Fri</div>
+          <div class="muted" style="text-align:center;font-weight:700">Sat</div>
+        </div>
+
+        <div id="calGrid" class="cal-grid" style="margin-top:8px;"></div>
+
+        <div id="dayEvents" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:12px">
+    <div id="note" class="muted">Loading…</div>
+  </div>
+</div>
+
+<script>
+/* CONFIG */
+const studentId = localStorage.getItem('studentId');
+const storedName = localStorage.getItem('studentName') || '';
+
+/* UI refs */
+const titleEl = document.getElementById('title');
+const smallInfo = document.getElementById('smallInfo');
+const noteEl = document.getElementById('note');
+const reportsArea = document.getElementById('reportsArea');
+const sendNoteBtn = document.getElementById('sendNoteBtn');
+const noteText = document.getElementById('noteText');
+const noteStatus = document.getElementById('noteStatus');
+const calGrid = document.getElementById('calGrid');
+const calMonth = document.getElementById('calMonth');
+const dayEvents = document.getElementById('dayEvents');
+const prevBtn = document.getElementById('prevMonth');
+const nextBtn = document.getElementById('nextMonth');
+
+/* Redirect if not logged in */
+if (!studentId) {
+  alert('Not logged in. Please login first.');
+  window.location.href = 'student-login.html';
+} else {
+  titleEl.textContent = `${storedName || 'Student'} — Dashboard`;
+  smallInfo.textContent = storedName ? `Welcome, ${storedName}` : '';
+}
+
+/* Utility */
+function safeText(v){ return v==null || v===''? '—' : String(v); }
+
+// passport image loader
+function makePassportCandidates(passportUrl) {
+  const candidates = [];
+  if (!passportUrl || passportUrl === '') return candidates;
+  const s = passportUrl.trim();
+  if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) candidates.push(s);
+  if (s.startsWith('/')) { candidates.push(s); }
+  else { 
+    candidates.push(s); 
+    if (!s.includes('/') && s.includes('.')) candidates.push(`/uploads/passports/${s}`); 
+  }
+  const basename = s.split('/').pop();
+  if (basename) { 
+    candidates.push(`/uploads/passports/${basename}`); 
+  }
+  return [...new Set(candidates)];
+}
+function tryImageCandidates(imgEl, candidates, onFail) {
+  if (!candidates || candidates.length === 0) { onFail(); return; }
+  let idx = 0;
+  const tryNext = () => {
+    if (idx >= candidates.length) { onFail(); return; }
+    const url = candidates[idx++];
+    const tester = new Image();
+    tester.onload = () => { imgEl.src = url; imgEl.dataset.loadedFrom = url; };
+    tester.onerror = () => tryNext();
+    tester.src = url;
+  };
+  tryNext();
+}
+const INLINE_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#aaa" font-family="Arial" font-size="12">No photo</text></svg>`
+);
+
+/* Global state */
+let schoolId = null;
+let eventsCache = []; 
+let displayMonth = new Date(); 
+
+/* Load student + reports + events */
+async function loadStudentDashboard() {
+  try {
+    noteEl.textContent = 'Loading student...';
+    const res = await fetch(`/students/${encodeURIComponent(studentId)}`);
+    if (!res.ok) throw new Error(`Failed to load (status ${res.status})`);
+    const s = await res.json();
+
+    // fill fields
+    document.getElementById('studentName').textContent = s.name || '—';
+    document.getElementById('studentNumber').textContent = s.student_number || '—';
+    document.getElementById('studentClass').textContent = s.class || '—';
+    document.getElementById('studentGender').textContent = s.gender || '—';
+    document.getElementById('studentDob').textContent = s.dob ? new Date(s.dob).toLocaleDateString() : '—';
+    document.getElementById('studentGuardian').textContent = s.guardian_contact || '—';
+    document.getElementById('studentPhone').textContent = s.parents_phone || '—';
+    document.getElementById('studentEmail').textContent = s.email || '—';
+    document.getElementById('studentAddress').textContent = s.address || '—';
+    document.getElementById('studentSubjects').textContent = s.subjects || '—';
+    document.getElementById('studentFeeStatus').textContent = s.fee_status || '—';
+
+    // passport
+    const imgEl = document.getElementById('studentPassport');
+    const passportVal = s.passport_url || s.passport || '';
+    const candidates = makePassportCandidates(passportVal);
+    tryImageCandidates(imgEl, candidates, () => { imgEl.src = INLINE_PLACEHOLDER; });
+
+    schoolId = s.school_id;
+
+    // fetch reports and events
+    await Promise.all([fetchReports(), fetchEvents()]);
+
+    noteEl.textContent = '';
+  } catch (err) {
+    console.error('Error loading dashboard:', err);
+    noteEl.textContent = 'Error loading profile. See console.';
+  }
+}
+
+/* REPORTS */
+async function fetchReports() {
+  reportsArea.innerHTML = 'Loading reports…';
+  try {
+    const res = await fetch(`/students/${encodeURIComponent(studentId)}/reports`);
+    if (!res.ok) throw new Error('Failed to load reports');
+    const reports = await res.json();
+    if (!Array.isArray(reports) || reports.length === 0) {
+      reportsArea.innerHTML = '<div class="muted">No reports available</div>';
+      return;
+    }
+    reportsArea.innerHTML = '';
+    reports.forEach(r => {
+      const a = document.createElement('a');
+      a.href = r.file_url.startsWith('http') ? r.file_url : `${r.file_url.startsWith('/') ? '' : '/'}${r.file_url}`;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = r.title || 'Report';
+      reportsArea.appendChild(a);
+    });
+  } catch (err) {
+    console.error('Error loading reports:', err);
+    reportsArea.innerHTML = '<div class="muted">Error loading reports</div>';
+  }
+}
+
+/* NOTES */
+sendNoteBtn.addEventListener('click', async () => {
+  const text = (noteText.value || '').trim();
+  if (!text) { noteStatus.textContent = 'Please type a message'; return; }
+  sendNoteBtn.disabled = true;
+  noteStatus.textContent = 'Sending...';
+  try {
+    const res = await fetch(`/students/${encodeURIComponent(studentId)}/messages`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json().catch(()=>null);
+    if (!res.ok) throw new Error((data && data.message) ? data.message : 'Send failed');
+    noteStatus.textContent = 'Message sent';
+    noteText.value = '';
+    setTimeout(()=>{ noteStatus.textContent = ''; }, 2500);
+  } catch (err) {
+    console.error('Error sending note:', err);
+    noteStatus.textContent = 'Send failed';
+  } finally {
+    sendNoteBtn.disabled = false;
+  }
+});
+
+/* CALENDAR */
+async function fetchEvents() {
+  if (!schoolId) return;
+  try {
+    const res = await fetch(`/schools/${encodeURIComponent(schoolId)}/events`);
+    if (!res.ok) throw new Error('Failed to load events');
+    eventsCache = await res.json();
+    renderCalendar();
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    eventsCache = [];
+    renderCalendar();
+  }
+}
+
+function startOfMonth(dt) {
+  return new Date(dt.getFullYear(), dt.getMonth(), 1);
+}
+function endOfMonth(dt) {
+  return new Date(dt.getFullYear(), dt.getMonth()+1, 0);
+}
+function formatMonthYear(dt) {
+  return dt.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+}
+
+function renderCalendar() {
+  calGrid.innerHTML = '';
+  calMonth.textContent = formatMonthYear(displayMonth);
+  const first = startOfMonth(displayMonth);
+  const last = endOfMonth(displayMonth);
+  const startWeekDay = first.getDay();
+  const daysInMonth = last.getDate();
+
+  for (let i=0;i<startWeekDay;i++){
+    const el = document.createElement('div'); 
+    el.className='cal-cell'; 
+    el.style.background='#fafafa'; 
+    calGrid.appendChild(el);
+  }
+
+  for (let day=1; day<=daysInMonth; day++){
+    const dateStr = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day).toISOString().slice(0,10);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    cell.innerHTML = `<div class="day">${day}</div>`;
+    const todays = eventsCache.filter(e => e.event_date && e.event_date.slice(0,10) === dateStr);
+    if (todays.length) {
+      const dots = document.createElement('div');
+      dots.style.marginTop = '22px';
+      todays.slice(0,3).forEach((ev, idx) => {
+        const dot = document.createElement('span'); 
+        dot.className = 'event-dot'; 
+        dot.title = ev.title;
+        dots.appendChild(dot);
+      });
+      cell.appendChild(dots);
+      cell.addEventListener('click', ()=> showDayEvents(dateStr, todays));
+      cell.style.cursor = 'pointer';
+    } else {
+      cell.addEventListener('click', ()=> showDayEvents(dateStr, []));
+    }
+    calGrid.appendChild(cell);
+  }
+}
+
+function showDayEvents(dateStr, todays) {
+  dayEvents.innerHTML = `<h4 style="margin:6px 0">${new Date(dateStr).toLocaleDateString()}</h4>`;
+  if (!todays || todays.length === 0) {
+    dayEvents.innerHTML += '<div class="muted">No events for this day.</div>';
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'events-list';
+  todays.forEach(ev => {
+    const d = document.createElement('div'); d.className = 'evt';
+    d.innerHTML = `<strong>${ev.title}</strong><div class="muted" style="font-size:12px">${ev.description || ''}</div>`;
+    list.appendChild(d);
+  });
+  dayEvents.appendChild(list);
+}
+
+/* month nav */
+prevBtn.addEventListener('click', () => { displayMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth()-1, 1); renderCalendar(); });
+nextBtn.addEventListener('click', () => { displayMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth()+1, 1); renderCalendar(); });
+
+/* logout */
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('studentId');
+  localStorage.removeItem('studentName');
+  window.location.href = 'student-login.html';
+});
+
+/* initial load */
+loadStudentDashboard();
+</script>
+
+</body>
+</html>

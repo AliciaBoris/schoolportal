@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>View Student Profile</title>
+<style>
+  :root{
+    --fuchsia: rgb(138,1,92);
+    --sea: rgb(5,122,56);
+    --muted: #f5f5f5;
+    --card-bg: #fff;
+  }
+  body { font-family: Arial, Helvetica, sans-serif; margin:0; background:var(--muted); color:#222; }
+  header { background: var(--fuchsia); color:#fff; padding:14px 16px; text-align:center; }
+  .container { max-width:700px; margin:18px auto; padding:16px; background:var(--card-bg); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+  h2 { margin:0 0 12px; color:var(--sea); text-align:center; }
+  .profile-top { display:flex; gap:16px; align-items:center; margin-bottom:12px; flex-wrap:wrap; justify-content:center; }
+  .profile-pic { flex: 0 0 140px; text-align:center; }
+  .profile-pic img { width:120px; height:120px; object-fit:cover; border-radius:50%; border:2px solid #ddd; display:block; margin:0 auto; }
+  .summary { flex:1; min-width:200px; }
+  .field { margin:8px 0; }
+  .field label { display:block; font-weight:700; color:#444; margin-bottom:4px; }
+  .field .value { color:#333; font-size:15px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  button { display:inline-block; padding:10px 12px; border:0; border-radius:8px; cursor:pointer; font-weight:700; }
+  .btn-back { background:#eee; color:#333; }
+  .btn-edit { background:var(--fuchsia); color:#fff; margin-left:8px; }
+  .muted { color:#666; font-size:13px; margin-top:8px; text-align:center; }
+  @media(max-width:640px){
+    .grid { grid-template-columns:1fr; }
+    .profile-top { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Student Profile</h1>
+</header>
+
+<div class="container" id="container">
+  <h2>Profile Details</h2>
+
+  <div class="profile-top">
+    <div class="profile-pic">
+      <img id="studentPassport" src="" alt="Passport Photo">
+    </div>
+
+    <div class="summary">
+      <div class="field"><label>Name</label><div class="value" id="studentName">—</div></div>
+      <div class="field"><label>Student Number</label><div class="value" id="studentNumber">—</div></div>
+      <div class="field"><label>Class</label><div class="value" id="studentClass">—</div></div>
+      <div class="field"><label>Gender</label><div class="value" id="studentGender">—</div></div>
+      <div class="field"><label>Date of Birth</label><div class="value" id="studentDob">—</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="field"><label>Guardian Contact</label><div class="value" id="studentGuardian">—</div></div>
+      <div class="field"><label>Parent's Phone</label><div class="value" id="studentParentPhone">—</div></div>
+      <div class="field"><label>Email</label><div class="value" id="studentEmail">—</div></div>
+    </div>
+
+    <div>
+      <div class="field"><label>Address</label><div class="value" id="studentAddress">—</div></div>
+      <div class="field"><label>Subjects</label><div class="value" id="studentSubjects">—</div></div>
+      <div class="field"><label>Fee Status</label><div class="value" id="studentFeeStatus">—</div></div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;text-align:center">
+    <button class="btn-back" id="backBtn">← Back to Dashboard</button>
+    <button class="btn-edit" id="editBtn">✎ Edit Profile</button>
+  </div>
+
+  <div class="muted" id="note">Loading…</div>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:5500';
+  const urlParams = new URLSearchParams(window.location.search);
+  const studentId = urlParams.get('id');
+  const noteEl = document.getElementById('note');
+
+  function safeText(v){ return v==null || v===''? '—' : String(v); }
+
+  // Build an ordered list of candidate URLs from the DB value
+  function makePassportCandidates(passportUrl) {
+    const candidates = [];
+
+    if (!passportUrl || passportUrl === '') return candidates;
+
+    const s = passportUrl.trim();
+
+    // 1) If it's already absolute, try it first
+    if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) {
+      candidates.push(s);
+    }
+
+    // 2) If it begins with a slash, prefix API_BASE (no double slash)
+    if (s.startsWith('/')) {
+      candidates.push(`${API_BASE}${s}`);
+      // Also try without API_BASE in case DB already stores absolute but missing protocol
+      candidates.push(s);
+    } else {
+      // 3) Try s as-is (maybe a full URL without protocol)
+      candidates.push(s);
+      // 4) Prefix with API_BASE + '/' + s
+      candidates.push(`${API_BASE}/${s}`);
+      // 5) If s looks like a filename (no slashes, contains dot), try common uploads path
+      if (!s.includes('/') && s.includes('.')) {
+        candidates.push(`${API_BASE}/uploads/passports/${s}`);
+      }
+    }
+
+    // 6) Last attempt: common uploads path with/without leading slash
+    const basename = s.split('/').pop();
+    if (basename) {
+      candidates.push(`${API_BASE}/uploads/passports/${basename}`);
+      candidates.push(`/uploads/passports/${basename}`);
+    }
+
+    // dedupe while preserving order
+    return [...new Set(candidates)];
+  }
+
+  // Try loading candidates in order; set img.src to first that loads
+  function tryImageCandidates(imgEl, candidates, onFail) {
+    if (!candidates || candidates.length === 0) {
+      onFail();
+      return;
+    }
+
+    let idx = 0;
+    const tryNext = () => {
+      if (idx >= candidates.length) {
+        onFail();
+        return;
+      }
+      const url = candidates[idx++];
+      const tester = new Image();
+      tester.onload = () => {
+        imgEl.src = url;
+        imgEl.dataset.loadedFrom = url;
+      };
+      tester.onerror = () => {
+        // try next candidate
+        tryNext();
+      };
+      tester.src = url;
+    };
+    tryNext();
+  }
+
+  // Inline tiny SVG placeholder (works offline, no external host)
+  const INLINE_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+       <rect width="100%" height="100%" fill="#eee"/>
+       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#aaa" font-family="Arial" font-size="12">No photo</text>
+     </svg>`
+  );
+
+  async function loadStudentProfile(){
+    if(!studentId){
+      alert('Student ID missing in URL');
+      window.location.href = 'school-dashboard.html';
+      return;
+    }
+
+    try{
+      noteEl.textContent = 'Loading student...';
+      const res = await fetch(`${API_BASE}/students/${encodeURIComponent(studentId)}`);
+      if(!res.ok){
+        throw new Error(`Failed to load (status ${res.status})`);
+      }
+      const s = await res.json();
+
+      document.getElementById('studentName').textContent = safeText(s.name);
+      document.getElementById('studentNumber').textContent = safeText(s.student_number);
+      document.getElementById('studentClass').textContent = safeText(s.class);
+      document.getElementById('studentGender').textContent = safeText(s.gender);
+      document.getElementById('studentDob').textContent = s.dob ? new Date(s.dob).toLocaleDateString() : '—';
+      document.getElementById('studentGuardian').textContent = safeText(s.guardian_contact);
+      document.getElementById('studentParentPhone').textContent = safeText(s.parents_phone || s.parent_phone);
+      document.getElementById('studentEmail').textContent = safeText(s.email);
+      document.getElementById('studentAddress').textContent = safeText(s.address);
+      document.getElementById('studentSubjects').textContent = safeText(s.subjects);
+      document.getElementById('studentFeeStatus').textContent = safeText(s.fee_status);
+
+      // Passport handling: try multiple candidate URLs, then fallback to inline placeholder
+      const imgEl = document.getElementById('studentPassport');
+      const passportVal = s.passport_url || s.passport || ''; // support alternate field names
+      const candidates = makePassportCandidates(passportVal);
+
+      tryImageCandidates(imgEl, candidates, () => {
+        // If nothing worked, show internal placeholder
+        imgEl.src = INLINE_PLACEHOLDER;
+      });
+
+      noteEl.textContent = '';
+    }catch(err){
+      console.error('Error loading profile:', err);
+      noteEl.textContent = 'Error loading profile. See console.';
+    }
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'school-dashboard.html';
+  });
+
+  document.getElementById('editBtn').addEventListener('click', () => {
+    window.location.href = `student-profile.html?id=${encodeURIComponent(studentId)}`;
+  });
+
+  // initial load
+  loadStudentProfile();
+</script>
+
+</body>
+</html>

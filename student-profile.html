@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Profile</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; margin:0; }
+  header { background: rgb(138,1,92); color:#fff; padding:14px; text-align:center }
+  .container { max-width:640px; margin:18px auto; background:#fff; padding:18px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.06) }
+  .profile-pic { text-align:center; margin-bottom:14px }
+  .profile-pic img { width:120px; height:120px; object-fit:cover; border-radius:50%; border:2px solid #ddd }
+  label { display:block; font-weight:600; margin-top:10px }
+  input, select, textarea { width:100%; padding:8px; margin-top:6px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box }
+  .row { display:flex; gap:10px }
+  .row .col { flex:1 }
+  .btn { display:inline-block; width:100%; padding:10px; margin-top:12px; border:0; border-radius:6px; cursor:pointer; background:rgb(5,122,56); color:#fff; font-weight:600 }
+  .btn.secondary { background:#6b6b6b }
+  .btn.view { background:rgb(138,1,92) }
+  .note { color:#666; font-size:13px; margin-top:10px; }
+  @media (max-width:600px){ .row{flex-direction:column} .container{margin:10px;padding:12px} }
+</style>
+</head>
+<body>
+<header><h1>Student Profile</h1></header>
+
+<div class="container">
+  <div class="profile-pic">
+    <img id="passportPreview" alt="Passport" />
+    <input type="file" id="passport" accept="image/*">
+  </div>
+
+  <form id="studentForm" enctype="multipart/form-data" autocomplete="off">
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" placeholder="Student name">
+
+    <!-- Optional student number (manual entry) -->
+    <label for="student_number">Student Number (optional)</label>
+    <input id="student_number" name="student_number" type="text" placeholder="e.g. STU12345">
+
+    <div class="row">
+      <div class="col">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+          <option value="">Select</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="class">Class</label>
+        <input id="class" name="class" type="text" placeholder="Class">
+      </div>
+    </div>
+
+    <label for="dob">Date of Birth</label>
+    <input id="dob" name="dob" type="date">
+
+    <label for="guardian_contact">Guardian</label>
+    <input id="guardian_contact" name="guardian_contact" type="text" placeholder="Guardian/Parent's name">
+
+    <label for="address">Address</label>
+    <textarea id="address" name="address" rows="2" placeholder="Address (optional)"></textarea>
+
+    <div class="row">
+      <div class="col">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="Email (optional)">
+      </div>
+      <div class="col">
+        <label for="parents_phone">Parent's Phone</label>
+        <input id="parents_phone" name="parents_phone" type="text" placeholder="Parent's phone (optional)">
+      </div>
+    </div>
+
+    <label for="subjects">Subjects</label>
+    <input id="subjects" name="subjects" type="text" placeholder="Subjects (comma-separated, optional)">
+
+    <label for="fee_status">Fee Status</label>
+    <select id="fee_status" name="fee_status">
+      <option value="">Select</option>
+      <option value="Paid">Paid</option>
+      <option value="Pending">Pending</option>
+      <option value="Partial">Partial</option>
+      <option value="Unpaid">Unpaid</option>
+    </select>
+
+    <button id="saveBtn" class="btn" type="submit">Save Changes</button>
+  </form>
+
+  <button id="viewSummaryBtn" class="btn view" type="button" style="margin-top:8px;">View Summary</button>
+  <button id="backBtn" class="btn secondary" type="button" style="margin-top:8px;">Back to Dashboard</button>
+
+  <div class="note">All fields optional. Upload passport only if you want to replace the existing photo.</div>
+</div>
+
+<script>
+    const API_BASE = "http://localhost:5500";
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id');
+
+    // Load student details
+    async function loadStudent() {
+        try {
+            const res = await fetch(`${API_BASE}/students/${studentId}`);
+            const student = await res.json();
+
+            document.getElementById('name').value = student.name || '';
+            document.getElementById('student_number').value = student.student_number || '';
+            document.getElementById('gender').value = student.gender || '';
+            document.getElementById('class').value = student.class || '';
+            document.getElementById('dob').value = student.dob ? student.dob.split('T')[0] : '';
+            document.getElementById('guardian_contact').value = student.guardian_contact || '';
+            document.getElementById('address').value = student.address || '';
+            document.getElementById('email').value = student.email || '';
+            document.getElementById('parents_phone').value = student.parents_phone || '';
+            document.getElementById('subjects').value = student.subjects || '';
+            document.getElementById('fee_status').value = student.fee_status || '';
+            if (student.passport_url) {
+                document.getElementById('passportPreview').src = student.passport_url;
+            }
+        } catch (err) {
+            console.error("Error loading student:", err);
+        }
+    }
+
+    // Preview passport before upload
+    function previewPassport(event) {
+        const reader = new FileReader();
+        reader.onload = function(){
+            document.getElementById('passportPreview').src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Helper: append only if filled
+    function appendIfFilled(fd, fieldId, fieldName) {
+        const el = document.getElementById(fieldId);
+        if (el && el.value && el.value.trim() !== '') {
+            fd.append(fieldName, el.value.trim());
+        }
+    }
+
+    // Save changes
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+
+        // Append only filled values
+        appendIfFilled(formData, 'name', 'name');
+        appendIfFilled(formData, 'student_number', 'student_number'); // optional
+        appendIfFilled(formData, 'gender', 'gender');
+        appendIfFilled(formData, 'class', 'class');
+        appendIfFilled(formData, 'dob', 'dob');
+        appendIfFilled(formData, 'guardian_contact', 'guardian_contact');
+        appendIfFilled(formData, 'address', 'address');
+        appendIfFilled(formData, 'email', 'email');
+        appendIfFilled(formData, 'parents_phone', 'parents_phone');
+        appendIfFilled(formData, 'subjects', 'subjects');
+        appendIfFilled(formData, 'fee_status', 'fee_status');
+
+        // Passport file if selected
+        const passportFile = document.getElementById('passport').files[0];
+        if (passportFile) {
+            formData.append('passport', passportFile);
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/update-student/${studentId}`, {
+                method: 'PUT',
+                body: formData
+            });
+            if (res.ok) {
+                alert('Student updated successfully!');
+                document.getElementById('viewSummaryBtn').style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            } else {
+                const txt = await res.text().catch(()=>null);
+                alert('Error updating student.' + (txt ? ('\n' + txt) : ''));
+            }
+        } catch (err) {
+            console.error("Error saving student:", err);
+            alert('Error saving student. See console for details.');
+        }
+    });
+
+    // View Summary button
+    document.getElementById('viewSummaryBtn').addEventListener('click', () => {
+        if (!studentId) {
+            alert('Student ID missing.');
+            return;
+        }
+        window.location.href = `view-student-profile.html?id=${encodeURIComponent(studentId)}`;
+    });
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'school-dashboard.html';
+  });
+  
+    loadStudent();
+</script>
+
+</body>
+</html>

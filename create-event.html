@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Event</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:0 }
+  .container { max-width:300px; margin:50px auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.1) }
+  h2 { text-align:center; color:rgb(138,1,92) }
+  label { display:block; font-weight:600; margin-top:12px }
+  input, textarea { width:90%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:6px }
+  button { margin-top:16px; width:100%; padding:10px; background:rgb(5,122,56); color:#fff; border:0; border-radius:6px; cursor:pointer; font-weight:600 }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Create Event</h2>
+  <form id="eventForm">
+    <label for="title">Event Title</label>
+    <input type="text" id="title" required>
+
+    <label for="date">Event Date</label>
+    <input type="date" id="date" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" rows="3" placeholder="Optional"></textarea>
+
+    <button type="submit">Create Event</button>
+  </form>
+</div>
+
+<script>
+const API_BASE = "http://localhost:5500";
+const adminSecret = localStorage.getItem("adminSecret");
+
+document.getElementById("eventForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const payload = {
+    title: document.getElementById("title").value,
+    date: document.getElementById("date").value,
+    description: document.getElementById("description").value
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/events`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Admin-Secret": adminSecret 
+      },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      alert("Event created successfully!");
+      e.target.reset();
+    } else {
+      alert("Error creating event.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Server error.");
+  }
+});
+</script>
+</body>
+</html>

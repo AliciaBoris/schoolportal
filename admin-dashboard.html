@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin | Schools & Subscriptions</title>
+<style>
+  :root{ --fuchsia: rgb(138,1,92); --sea: rgb(5,122,56); --muted:#f5f5f5; }
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;background:var(--muted);color:#222}
+  header{background:var(--fuchsia);color:#fff;padding:18px 20px}
+  header h1{margin:0;font-size:20px}
+  main{max-width:1100px;margin:20px auto;padding:0 16px}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  input,select{padding:8px;border:1px solid #ddd;border-radius:6px}
+  button{padding:8px 10px;border:0;border-radius:6px;cursor:pointer}
+  .primary{background:var(--sea);color:#fff}
+  .ghost{background:#eee}
+  .danger{background:#d32f2f;color:#fff}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  th,td{padding:10px;border-bottom:1px solid #f0f0f0;text-align:left}
+  th{background:var(--fuchsia);color:#fff}
+  .badge{padding:4px 8px;border-radius:12px;font-size:12px;color:#fff;display:inline-block}
+  .ACTIVE{background:var(--sea)}
+  .EXPIRED{background:#ff9800}
+  .INACTIVE{background:#9e9e9e}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .muted{color:#666;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Admin Dashboard — Schools & Subscriptions</h1>
+</header>
+<main>
+  <div class="bar">
+    <label class="muted">Backend:</label>
+    <input id="baseUrl" value="http://localhost:5500" style="min-width:260px">
+    <label class="muted">Admin Secret:</label>
+   <div style="position:relative;display:flex;align-items:center;max-width:240px">
+  <input id="adminSecret" type="password" value="supersecretadmin" style="flex:1;padding-right:36px;">
+  <button type="button" onclick="toggleAdminSecret()" 
+          style="position:absolute;right:6px;background:none;border:none;cursor:pointer;color:#8a015c">
+    👁
+  </button>
+</div>
+
+<script>
+function toggleAdminSecret() {
+  const field = document.getElementById('adminSecret');
+  field.type = field.type === 'password' ? 'text' : 'password';
+}
+</script>
+
+    <button id="refresh" class="ghost">Refresh</button>
+
+    <br>
+       <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" id="logoutBtn">Logout</button>
+    </div>
+<br>
+<button type="button" 
+          onclick="window.location.href='admin-reset-password.html'" 
+      style="background:#8a012a;color:#fff;padding:8px 14px;border:none;border-radius:6px;cursor:pointer">
+      Reset School Password
+  </button>
+    </div>
+
+
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Email</th><th>Status</th>
+        <th>Start</th><th>End</th><th>Created</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="8" class="muted">Loading...</td></tr>
+    </tbody>
+  </table>
+</main>
+
+<script>
+const tbody = document.getElementById('tbody');
+const baseUrlInput = document.getElementById('baseUrl');
+const adminSecretInput = document.getElementById('adminSecret');
+const logoutBtn = document.getElementById('logoutBtn');
+document.getElementById('refresh').addEventListener('click', load);
+
+function badge(status){
+  return `<span class="badge ${status}">${status}</span>`;
+}
+function fmt(d){ return d ? new Date(d).toLocaleDateString() : ''; }
+
+async function load(){
+  tbody.innerHTML = '<tr><td colspan="8" class="muted">Loading...</td></tr>';
+  try{
+    const res = await fetch(`${baseUrlInput.value}/admin/schools`, {
+      headers: { 'X-Admin-Secret': adminSecretInput.value }
+    });
+    if(!res.ok){ throw new Error(`Failed ${res.status}`); }
+    const rows = await res.json();
+    if(!Array.isArray(rows) || rows.length === 0){
+      tbody.innerHTML = '<tr><td colspan="8" class="muted">No schools found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td>${esc(r.name)}</td>
+        <td>${esc(r.email)}</td>
+        <td>${badge(r.status)}</td>
+        <td>${fmt(r.subscription_start)}</td>
+        <td>${fmt(r.subscription_end)}</td>
+        <td>${fmt(r.created_at)}</td>
+        <td class="actions">
+          <button class="primary" onclick="activate(${r.id}, 30)">Activate 30d</button>
+          <button class="ghost" onclick="custom(${r.id})">Set Custom</button>
+          <button class="ghost" onclick="deactivate(${r.id})">Deactivate</button>
+          <button class="danger" onclick="delSchool(${r.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }catch(e){
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="8" class="muted">Error loading: ${e.message}</td></tr>`;
+  }
+}
+
+async function activate(id, days){
+  try{
+    const res = await fetch(`${baseUrlInput.value}/admin/schools/${id}/activate`, {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecretInput.value },
+      body: JSON.stringify({ days })
+    });
+    if(!res.ok) throw new Error(`Activate failed ${res.status}`);
+    await res.json();
+    load();
+  }catch(e){ alert(e.message); }
+}
+
+async function deactivate(id){
+  if(!confirm('Deactivate this school?')) return;
+  try{
+    const res = await fetch(`${baseUrlInput.value}/admin/schools/${id}/deactivate`, {
+      method:'PATCH',
+      headers:{ 'X-Admin-Secret': adminSecretInput.value }
+    });
+    if(!res.ok) throw new Error(`Deactivate failed ${res.status}`);
+    await res.json();
+    load();
+  }catch(e){ alert(e.message); }
+}
+
+async function delSchool(id){
+  if(!confirm('Delete this school? This cannot be undone.')) return;
+  try{
+    const res = await fetch(`${baseUrlInput.value}/schools/${id}`, {
+      method:'DELETE',
+      headers:{ 'X-Admin-Secret': adminSecretInput.value }
+    });
+    if(!res.ok) throw new Error(`Delete failed ${res.status}`);
+    await res.json();
+    load();
+  }catch(e){ alert(e.message); }
+}
+
+async function custom(id){
+  const start = prompt('Subscription START date (YYYY-MM-DD), leave blank for NULL:', '');
+  const end = prompt('Subscription END date (YYYY-MM-DD), leave blank for NULL:', '');
+  const activeAns = prompt('Active? (yes/no). Default yes:', 'yes');
+  const active = (activeAns || 'yes').toLowerCase().startsWith('y');
+  try{
+    const res = await fetch(`${baseUrlInput.value}/admin/schools/${id}/set-subscription`, {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecretInput.value },
+      body: JSON.stringify({ start: start || null, end: end || null, active })
+    });
+    if(!res.ok) throw new Error(`Set subscription failed ${res.status}`);
+    await res.json();
+    load();
+  }catch(e){ alert(e.message); }
+}
+
+function toggleAdminSecret() {
+  const field = document.getElementById('adminSecret');
+  field.type = field.type === 'password' ? 'text' : 'password';
+}
+function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('adminSecret');
+  window.location.href = 'admin-login.html';
+});
+load();
+</script>
+</body>
+</html>
