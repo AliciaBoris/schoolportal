@@ -84,12 +84,14 @@
       color: white;
       text-decoration: none;
        font-weight: 500;
-      border-radius: 8px;
+      border-radius: 5px;
       transition: background-color 0.3s;
     }
 
     .login-buttons a:hover {
-      background-color: #037734;
+      background-color: #f2f8f4;
+      color: rgb(11, 48, 23);
+      border: 1px solid rgb(10, 94, 38);
     }
 
     .hero-image {
@@ -99,10 +101,11 @@
       margin-bottom: 1rem;
     }
 
+
     section {
       padding: 2rem 10%;
       background: white;
-      border-bottom: 1px solid #ddd;
+      
     }
 
     section h2 {
@@ -113,6 +116,105 @@
     section ul {
       margin-left: 1.5rem;
     }
+#features-section {
+  padding: 60px 40px;
+  text-align: justify;
+}
+
+.features-header h2 {
+  font-size: 2.0rem;
+  margin-bottom: 10px;
+  color: #000913;
+  text-align: center;
+}
+
+.features-header p {
+  font-size: 1.1rem;
+  color: #202020;
+  max-width: 1000px;
+  margin: 0 auto 40px auto;
+  line-height: 1.6;
+}
+
+
+.features-section p {
+      color: var(--primary-fuscia);
+      margin-bottom: 1rem;
+      justify-content: center;
+    }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+.feature-card img {
+  width: 100%;
+  border-radius: 8px;
+}
+.feature-card h3 {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+/* Modal styles */
+.modal {
+  display: none; /* hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  text-align: left;
+  animation: fadeIn 0.3s ease;
+}
+.close {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+.features-grid img {
+  width: 80%;
+  height: 80%;
+  object-fit: cover;
+  border-radius: 5px;   /* rounded corners */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.features-grid img:hover {
+  transform: scale(1.05);
+}
 
     .steps-container {
   display: flex;
@@ -123,9 +225,9 @@
 }
 
 .step-card {
-  background-color: #10a04c;
+  background-color: #f2f5f3;
   border: 1px solid #011b03;
-  color:#f7f9fc;
+  color:#00040a;
   border-radius: 12px;
   padding: 1.5rem;
   width: calc(50% - 1rem);
@@ -136,9 +238,9 @@
 }
 
 .step-card:hover {
-  background-color: #f2f556;
-  border: 1px solid #f5e508ff;
-  color:#00050c;
+  background-color: #108a39;
+  border: 1px solid rgb(10, 94, 38);
+  color:#f8f9fc;
   border-radius: 12px;
   padding: 1.5rem;
   width: calc(50% - 1rem);
@@ -275,7 +377,7 @@
   <nav>
     <a href="#about">About</a>
     <a href="#how-it-works">How It Works</a>
-    <a href="#pricing">Pricing</a>
+    <a href="#features-section">Features</a>
     <a href="#contact">Contact</a>
   </nav>
 
@@ -304,8 +406,162 @@
   </div>
 </section>
 
+<section id="features-section">
+  <div class="features-header">
+    <h2>Features</h2>
+    <p>
+      Clairdot School records management Portal boasts of unique and effective features that enable users to perform simple data management tasks seamlessly. These features include: Robust data 
+      management, login features for school administrators, student dashboards to enable students and parents view their information on the school portal, notification calenders to save information 
+      about school events which can be viewed on student dashboards, upload and download of students' results, unified fee tracking system to enable management keep track of fee payment and all these are at
+      affordable costs. 
+    </p>
+  </div>
+ 
 
-  <section id="pricing">
+<section id="features-section">
+  <div class="features-grid">
+
+    <!-- Feature 1 -->
+    <div class="feature-card" data-modal="modal1">
+      <img src="pictures/data1.png" alt="Robust Data Management">
+      <h3>Robust Data Management</h3>
+    </div>
+
+    <!-- Feature 2 -->
+    <div class="feature-card" data-modal="modal2">
+      <img src="pictures/data2.png" alt="Admin Login">
+      <h3>School Administrator Login</h3>
+    </div>
+
+    <!-- Feature 3 -->
+    <div class="feature-card" data-modal="modal3">
+      <img src="pictures/data3.png" alt="Student Dashboard">
+      <h3>Student Dashboard</h3>
+    </div>
+
+    <!-- Feature 4 -->
+    <div class="feature-card" data-modal="modal4">
+      <img src="pictures/data4.png" alt="Events Calendar">
+      <h3>Calendar for Events</h3>
+    </div>
+
+    <!-- Feature 5 -->
+    <div class="feature-card" data-modal="modal5">
+      <img src="pictures/data5.png" alt="Results Upload">
+      <h3>Upload of Results</h3>
+    </div>
+
+    <!-- Feature 6 -->
+    <div class="feature-card" data-modal="modal6">
+      <img src="pictures/data6.png" alt="Affordable Subscription">
+      <h3>Affordable Subscription</h3>
+    </div>
+
+    <!-- Feature 7 -->
+    <div class="feature-card" data-modal="modal7">
+      <img src="pictures/data7.png" alt="Unified payment system">
+      <h3>Unified Payment System</h3>
+    </div>
+  </div>
+</section>
+
+<!-- Modals -->
+<div id="modal1" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Robust Data Management</h2>
+    <p>
+      The platform ensures all school records including; student details, staff 
+      profiles, attendance, results, and financial records are stored securely 
+      and organized efficiently. With advanced database integration, schools 
+      can easily manage, update, and retrieve information whenever needed, 
+      reducing errors and improving accountability.
+    </p>
+  </div>
+</div>
+
+
+<div id="modal2" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>School Administrator Login</h2>
+    <p>
+      A secure administrator login gives school officials exclusive access to 
+      management tools. Admins can monitor student records, manage staff, update 
+      results, and control system-wide settings, ensuring only authorized 
+      personnel can perform critical tasks.
+    </p>
+  </div>
+</div>
+
+
+<div id="modal3" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Student Dashboard</h2>
+    <p>
+      Each student has a personalized dashboard where they can view their courses, 
+      assignments, attendance records, and academic progress. The dashboard provides 
+      quick access to essential information, making it easier for students to stay 
+      organized and focused on their learning journey.
+    </p>
+  </div>
+</div>
+
+<div id="modal4" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Calendar for Events</h2>
+    <p>
+      The built-in school calendar allows administrators to broadcast important 
+      announcements, events, and deadlines. From examinations and PTA meetings 
+      to extracurricular activities, students and staff always stay informed with 
+      timely reminders and an up-to-date schedule.
+    </p>
+  </div>
+</div>
+
+<div id="modal5" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Upload of Results</h2>
+    <p>
+      Teachers and administrators can securely upload students’ results directly 
+      into the platform. Students and parents gain instant access to report cards 
+      and performance analysis, reducing paperwork and ensuring transparency 
+      in the evaluation process.
+    </p>
+  </div>
+</div>
+
+<div id="modal6" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Affordable Subscription</h2>
+    <p>
+      Our platform is designed to be cost-effective, ensuring schools of all sizes 
+      can benefit from modern management tools without straining their budgets. 
+      Flexible pricing plans make it easy to adopt and scale the system according 
+      to your institution’s needs.
+    </p>
+  </div>
+
+<div id="modal7" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Unified Payment System</h2>
+    <p>
+      Clairdot offers you a Unified Payment System to streamline payments and ensure 
+      ease in tracking payments of all students. Now you don't have to worry about
+      how to track payment of school fees and other charges.
+    </p>
+  </div>
+  
+</div>
+
+</section>
+
+<section>
     <h2>Pricing</h2>
     <p>Clairdot is designed to be affordable for small and medium-sized schools.</p>
     <ul>
@@ -322,20 +578,20 @@
   <div class="testimonial-container">
     <div class="testimonial-card">
       <img src="pictures/Mr. Johnson.png" alt="Mr. Johnson pic">
-      <h3>Mr. Johnson</h3>
-      <p>“Clairdot has simplified our student record management. Now, teachers spend less time on paperwork and more time teaching!”</p>
+  <p>“Clairdot has simplified our student record management. Now, teachers spend less time on paperwork and more time teaching!”</p>
+    <h3>Mr. Johnson</h3>
     </div>
 
     <div class="testimonial-card">
       <img src="pictures/Mrs. Adewale.png" alt="Mrs. Adewale pic">
-      <h3>Mrs. Adewale</h3>
-      <p>“The fee tracking feature is a lifesaver. Parents and admin staff can now easily monitor payments without confusion.”</p>
+    <p>“The fee tracking feature is a lifesaver. Parents and admin staff can now easily monitor payments without confusion.”</p>
+   <h3>Mrs. Adewale</h3>
     </div>
 
     <div class="testimonial-card">
       <img src="pictures/Principal Okeke.png" alt="Principal Okeke pic">
-      <h3>Principal Okeke</h3>
       <p>“Affordable, reliable, and user-friendly. Clairdot has made a big difference in the way our school operates.”</p>
+      <h3>Principal Okeke</h3>
     </div>
   </div>
 
@@ -355,6 +611,29 @@
   </footer>
 
 <script>
+
+  // Open modal on feature-card click
+  document.querySelectorAll('.feature-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const modalId = card.getAttribute('data-modal');
+      document.getElementById(modalId).style.display = 'flex';
+    });
+  });
+
+  // Close modal on X click
+  document.querySelectorAll('.modal .close').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.target.closest('.modal').style.display = 'none';
+    });
+  });
+
+  // Close modal if user clicks outside modal-content
+  window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+      e.target.style.display = 'none';
+    }
+  });
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
